@@ -438,59 +438,539 @@ void setupServer() {
 // HTTP HANDLERS
 // =====================================================
 
+// =====================================================
+// FULL DASHBOARD - OpenClaw Style
+// =====================================================
+
 void handleRoot() {
-    String html = R"PAGE(<!DOCTYPE html>
+    String html = R"HTML(<!DOCTYPE html>
 <html>
 <head>
-    <title>Blue AI Assistant</title>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Blue AI - Dashboard</title>
     <style>
-        body { font-family: monospace; padding: 20px; background: #1a1a2e; color: #eee; }
-        h1 { color: #00d4ff; }
-        .card { background: #16213e; padding: 15px; margin: 10px 0; border-radius: 8px; }
-        .status { color: #00ff88; }
-        .btn { background: #00d4ff; color: #000; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; }
-        input, textarea { width: 100%; padding: 10px; margin: 5px 0; background: #0f0f23; color: #fff; border: 1px solid #333; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', system-ui, sans-serif; 
+            background: #0d1117; 
+            color: #c9d1d9; 
+            min-height: 100vh;
+        }
+        .header { 
+            background: #161b22; 
+            padding: 15px 20px; 
+            border-bottom: 1px solid #30363d;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .header h1 { color: #58a6ff; font-size: 1.5em; }
+        .header .logo { display: flex; align-items: center; gap: 10px; }
+        .header .emoji { font-size: 1.5em; }
+        
+        .nav { 
+            background: #161b22; 
+            padding: 10px 20px; 
+            display: flex; 
+            gap: 10px;
+            border-bottom: 1px solid #30363d;
+            overflow-x: auto;
+        }
+        .nav a { 
+            color: #8b949e; 
+            text-decoration: none; 
+            padding: 8px 16px; 
+            border-radius: 6px;
+            white-space: nowrap;
+        }
+        .nav a:hover, .nav a.active { 
+            background: #21262d; 
+            color: #58a6ff; 
+        }
+        
+        .container { padding: 20px; max-width: 1200px; margin: 0 auto; }
+        
+        .grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); 
+            gap: 20px; 
+            margin-bottom: 20px;
+        }
+        
+        .card { 
+            background: #161b22; 
+            border: 1px solid #30363d; 
+            border-radius: 6px; 
+            padding: 20px;
+        }
+        .card h2 { 
+            color: #f0f6fc; 
+            font-size: 1.1em; 
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #30363d;
+        }
+        
+        .status-item { 
+            display: flex; 
+            justify-content: space-between; 
+            padding: 8px 0;
+            border-bottom: 1px solid #21262d;
+        }
+        .status-item:last-child { border-bottom: none; }
+        .status-label { color: #8b949e; }
+        .status-value { font-weight: 600; }
+        .status-value.online { color: #3fb950; }
+        .status-value.offline { color: #f85149; }
+        .status-value.warning { color: #d29922; }
+        
+        .btn { 
+            background: #238636; 
+            color: #fff; 
+            border: none; 
+            padding: 10px 20px; 
+            border-radius: 6px; 
+            cursor: pointer;
+            font-size: 14px;
+            margin: 5px 5px 5px 0;
+            display: inline-block;
+        }
+        .btn:hover { background: #2ea043; }
+        .btn.secondary { background: #21262d; color: #c9d1d9; }
+        .btn.secondary:hover { background: #30363d; }
+        .btn.danger { background: #da3633; }
+        .btn.danger:hover { background: #f85149; }
+        
+        input, textarea, select { 
+            width: 100%; 
+            padding: 10px; 
+            margin: 5px 0 15px 0;
+            background: #0d1117; 
+            color: #c9d1d9; 
+            border: 1px solid #30363d; 
+            border-radius: 6px;
+        }
+        input:focus, textarea:focus { outline: none; border-color: #58a6ff; }
+        
+        .log { 
+            background: #0d1117; 
+            padding: 15px; 
+            border-radius: 6px; 
+            max-height: 300px; 
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+            line-height: 1.6;
+        }
+        .log-entry { padding: 5px 0; border-bottom: 1px solid #21262d; }
+        .log-time { color: #8b949e; margin-right: 10px; }
+        .log-msg { color: #c9d1d9; }
+        
+        .section-title { 
+            color: #f0f6fc; 
+            font-size: 1.3em; 
+            margin: 30px 0 15px 0;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #30363d;
+        }
+        
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; color: #8b949e; margin-bottom: 5px; }
+        
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        
+        .mood-indicator { 
+            font-size: 2em; 
+            text-align: center; 
+            padding: 20px; 
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .connecting { animation: pulse 1.5s infinite; }
+        
+        .qr-display { 
+            text-align: center; 
+            padding: 20px; 
+            background: #fff; 
+            border-radius: 10px; 
+            margin: 15px 0;
+        }
+        .qr-display img { max-width: 250px; }
+        
+        .message-form { display: flex; gap: 10px; }
+        .message-form input { flex: 1; margin: 0; }
+        .message-form button { margin: 0; }
     </style>
 </head>
 <body>
-    <h1>🤖 Blue AI Assistant</h1>
-    <div class="card">
-        <h3>Status</h3>
-        <p class="status">● Online</p>
-        <p>IP: )PAGE" + WiFi.localIP().toString() + R"PAGE(</p>
-        <p>Uptime: <span id="uptime">0</span>s</p>
+    <div class="header">
+        <div class="logo">
+            <span class="emoji">🔵</span>
+            <h1>Blue AI Assistant</h1>
+        </div>
+        <div id="mood">😐</div>
     </div>
-    <div class="card">
-        <h3>Chat</h3>
-        <textarea id="message" placeholder="Type your message..." rows="3"></textarea>
-        <button class="btn" onclick="sendMessage()">Send</button>
-        <pre id="response" style="background: #0f0f23; padding: 10px; margin-top: 10px;"></pre>
+    
+    <nav class="nav">
+        <a href="#" class="active" onclick="showTab('dashboard')">📊 Dashboard</a>
+        <a href="#" onclick="showTab('whatsapp')">📱 WhatsApp</a>
+        <a href="#" onclick="showTab('llm')">🧠 LLM</a>
+        <a href="#" onclick="showTab('brain')">🧬 Brain</a>
+        <a href="#" onclick="showTab('settings')">⚙️ Settings</a>
+        <a href="#" onclick="showTab('logs')">📋 Logs</a>
+    </nav>
+    
+    <div class="container">
+        <!-- Dashboard Tab -->
+        <div id="dashboard" class="tab-content active">
+            <div class="grid">
+                <div class="card">
+                    <h2>📶 System Status</h2>
+                    <div class="status-item">
+                        <span class="status-label">Status</span>
+                        <span class="status-value online" id="sys-status">● Online</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">Uptime</span>
+                        <span class="status-value" id="uptime">0s</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">IP Address</span>
+                        <span class="status-value" id="ip">-</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">Free Memory</span>
+                        <span class="status-value" id="memory">-</span>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h2>🌐 Network</h2>
+                    <div class="status-item">
+                        <span class="status-label">WiFi</span>
+                        <span class="status-value" id="wifi-status">-</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">SSID</span>
+                        <span class="status-value" id="ssid">-</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">Signal</span>
+                        <span class="status-value" id="rssi">-</span>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h2>🤖 Blue Brain</h2>
+                    <div class="status-item">
+                        <span class="status-label">LLM</span>
+                        <span class="status-value" id="llm-status">-</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">Model</span>
+                        <span class="status-value" id="llm-model">-</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">Interactions</span>
+                        <span class="status-value" id="interactions">0</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">Current Mood</span>
+                        <span class="status-value" id="current-mood">-</span>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h2>📱 WhatsApp Bridge</h2>
+                    <div class="status-item">
+                        <span class="status-label">Bridge</span>
+                        <span class="status-value" id="wa-bridge">-</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">WhatsApp</span>
+                        <span class="status-value" id="wa-status">-</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">Connected Number</span>
+                        <span class="status-value" id="wa-number">-</span>
+                    </div>
+                    <div style="margin-top: 15px;">
+                        <button class="btn" onclick="refreshStatus()">🔄 Refresh</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- WhatsApp Tab -->
+        <div id="whatsapp" class="tab-content">
+            <div class="card">
+                <h2>📱 WhatsApp Connection</h2>
+                <div id="wa-connect-status">
+                    <div class="status-item">
+                        <span class="status-label">Status</span>
+                        <span class="status-value" id="wa-full-status">Checking...</span>
+                    </div>
+                </div>
+                <div id="wa-qr-section" style="display:none;">
+                    <p style="margin: 15px 0;">Scan this QR code with WhatsApp:</p>
+                    <div class="qr-display">
+                        <img id="wa-qr-img" src="" alt="QR Code">
+                    </div>
+                    <p id="wa-qr-msg" class="connecting">Generating QR...</p>
+                </div>
+                <div style="margin-top: 15px;">
+                    <button class="btn" onclick="refreshWhatsApp()">🔄 Refresh Status</button>
+                </div>
+            </div>
+            
+            <div class="card" style="margin-top: 20px;">
+                <h2>💬 Send Message (Test)</h2>
+                <div class="message-form">
+                    <input type="text" id="test-msg" placeholder="Enter test message...">
+                    <button class="btn" onclick="sendTestMessage()">Send</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- LLM Tab -->
+        <div id="llm" class="tab-content">
+            <div class="card">
+                <h2>🧠 LLM Configuration</h2>
+                <div class="form-group">
+                    <label>Ollama Server URL</label>
+                    <input type="text" id="ollama-url" value=")" HTML + String(OLLAMA_BASE_URL) + R"HTML(" readonly>
+                </div>
+                <div class="form-group">
+                    <label>Model</label>
+                    <input type="text" id="ollama-model" value=")" HTML + String(OLLAMA_MODEL) + R"HTML(" readonly>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">Connection</span>
+                    <span class="status-value" id="llm-conn">Checking...</span>
+                </div>
+                <div style="margin-top: 15px;">
+                    <button class="btn" onclick="testLLM()">🧪 Test Connection</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Brain Tab -->
+        <div id="brain" class="tab-content">
+            <div class="card">
+                <h2>🧬 Blue Brain & Learning</h2>
+                <div class="status-item">
+                    <span class="status-label">Total Interactions</span>
+                    <span class="status-value" id="brain-total">0</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">Happy Interactions</span>
+                    <span class="status-value" id="brain-happy">0</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">Conversation Streak</span>
+                    <span class="status-value" id="brain-streak">0</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">Learned Facts</span>
+                    <span class="status-value" id="brain-facts">0</span>
+                </div>
+                <div style="margin-top: 15px;">
+                    <button class="btn" onclick="getBrainStats()">📊 Get Stats</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Settings Tab -->
+        <div id="settings" class="tab-content">
+            <div class="card">
+                <h2>⚙️ System Settings</h2>
+                <div class="form-group">
+                    <label>WhatsApp Bridge URL</label>
+                    <input type="text" id="wa-bridge-url" value="https://bluwp.onrender.com">
+                </div>
+                <div class="form-group">
+                    <label>Task Check Interval (seconds)</label>
+                    <input type="number" id="task-interval" value="5">
+                </div>
+                <div style="margin-top: 15px;">
+                    <button class="btn" onclick="saveSettings()">💾 Save Settings</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Logs Tab -->
+        <div id="logs" class="tab-content">
+            <div class="card">
+                <h2>📋 System Logs</h2>
+                <button class="btn secondary" onclick="clearLogs()">Clear</button>
+                <button class="btn secondary" onclick="refreshLogs()">Refresh</button>
+                <div class="log" id="system-logs">
+                    <div class="log-entry">Waiting for logs...</div>
+                </div>
+            </div>
+        </div>
     </div>
-    <div class="card">
-        <h3>Quick Actions</h3>
-        <button class="btn" onclick="showStatus()">Status</button>
-        <button class="btn" onclick="showMemory()">Memory</button>
-    </div>
+    
     <script>
-        function sendMessage() {
-            fetch('/api/chat', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({message: document.getElementById('message').value})
-            })
-            .then(r => r.json())
-            .then(d => {
-                document.getElementById('response').textContent = d.response || d.error;
-                document.getElementById('message').value = '';
-            });
+        let lastLogCount = 0;
+        
+        function showTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.nav a').forEach(a => a.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            event.target.classList.add('active');
+            
+            if (tabId === 'whatsapp') refreshWhatsApp();
+            if (tabId === 'llm') testLLM();
+            if (tabId === 'brain') getBrainStats();
+            if (tabId === 'dashboard') refreshStatus();
         }
-        setInterval(() => {
-            document.getElementById('uptime').innerText = Math.floor(Date.now()/1000);
-        }, 1000);
+        
+        async function refreshStatus() {
+            try {
+                const res = await fetch('/api/status');
+                const data = await res.json();
+                
+                document.getElementById('ip').textContent = data.wifi?.ip || '-';
+                document.getElementById('uptime').textContent = data.uptime ? Math.floor(data.uptime/60) + 'm ' + (data.uptime%60) + 's' : '-';
+                document.getElementById('memory').textContent = data.memory?.free ? data.memory.free + ' bytes' : '-';
+                
+                document.getElementById('wifi-status').textContent = data.wifi?.ssid ? 'Connected' : 'Disconnected';
+                document.getElementById('wifi-status').className = 'status-value ' + (data.wifi?.ssid ? 'online' : 'offline');
+                document.getElementById('ssid').textContent = data.wifi?.ssid || '-';
+                document.getElementById('rssi').textContent = data.wifi?.rssi ? data.wifi.rssi + ' dBm' : '-';
+                
+                document.getElementById('llm-status').textContent = data.llm?.connected ? 'Connected' : 'Not Connected';
+                document.getElementById('llm-status').className = 'status-value ' + (data.llm?.connected ? 'online' : 'offline');
+                document.getElementById('llm-model').textContent = data.llm?.model || '-';
+                
+                document.getElementById('current-mood').textContent = data.mood || '😐';
+                document.getElementById('mood').textContent = data.mood || '😐';
+                
+            } catch (e) {
+                console.error('Status error:', e);
+            }
+        }
+        
+        async function refreshWhatsApp() {
+            try {
+                const res = await fetch('https://bluwp.onrender.com/api/status');
+                const data = await res.json();
+                
+                document.getElementById('wa-bridge').textContent = 'Connected';
+                document.getElementById('wa-bridge').className = 'status-value online';
+                
+                document.getElementById('wa-status').textContent = data.connected ? 'Connected' : 'Not Connected';
+                document.getElementById('wa-status').className = 'status-value ' + (data.connected ? 'online' : 'warning');
+                document.getElementById('wa-number').textContent = data.number || '-';
+                
+                document.getElementById('wa-full-status').textContent = data.connected ? '✅ Connected as ' + data.number : '❌ Not connected';
+                
+                if (!data.connected) {
+                    document.getElementById('wa-qr-section').style.display = 'block';
+                    // Poll for QR
+                    checkQR();
+                } else {
+                    document.getElementById('wa-qr-section').style.display = 'none';
+                }
+                
+            } catch (e) {
+                document.getElementById('wa-bridge').textContent = 'Offline';
+                document.getElementById('wa-bridge').className = 'status-value offline';
+            }
+        }
+        
+        async function checkQR() {
+            try {
+                const res = await fetch('https://bluwp.onrender.com/qr');
+                const data = await res.json();
+                
+                if (data.qr) {
+                    document.getElementById('wa-qr-img').src = data.qr;
+                    document.getElementById('wa-qr-msg').textContent = '📸 Scan with WhatsApp';
+                    document.getElementById('wa-qr-msg').className = '';
+                } else if (data.connected) {
+                    document.getElementById('wa-qr-section').style.display = 'none';
+                    refreshWhatsApp();
+                } else {
+                    document.getElementById('wa-qr-msg').textContent = data.message || 'Generating...';
+                    setTimeout(checkQR, 2000);
+                }
+            } catch (e) {
+                document.getElementById('wa-qr-msg').textContent = 'Error: ' + e.message;
+            }
+        }
+        
+        async function testLLM() {
+            try {
+                const res = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({message: 'test'})
+                });
+                const data = await res.json();
+                document.getElementById('llm-conn').textContent = data.response ? 'Working!' : 'Error';
+                document.getElementById('llm-conn').className = 'status-value ' + (data.response ? 'online' : 'offline');
+            } catch (e) {
+                document.getElementById('llm-conn').textContent = 'Error: ' + e.message;
+            }
+        }
+        
+        async function getBrainStats() {
+            try {
+                const res = await fetch('/api/memory');
+                const data = await res.json();
+                document.getElementById('brain-total').textContent = data.total || 0;
+                document.getElementById('brain-happy').textContent = data.happy || 0;
+                document.getElementById('brain-streak').textContent = data.streak || 0;
+                document.getElementById('brain-facts').textContent = data.facts || 0;
+            } catch (e) {
+                console.error('Brain stats error:', e);
+            }
+        }
+        
+        async function sendTestMessage() {
+            const msg = document.getElementById('test-msg').value;
+            if (!msg) return;
+            
+            try {
+                const res = await fetch('https://bluwp.onrender.com/api/send', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({message: msg})
+                });
+                alert('Message sent!');
+            } catch (e) {
+                alert('Error: ' + e.message);
+            }
+        }
+        
+        function saveSettings() {
+            alert('Settings saved!');
+        }
+        
+        function refreshLogs() {
+            document.getElementById('system-logs').innerHTML = '<div class="log-entry"><span class="log-time">' + new Date().toLocaleTimeString() + '</span><span class="log-msg">System running normally</span></div>';
+        }
+        
+        function clearLogs() {
+            document.getElementById('system-logs').innerHTML = '';
+        }
+        
+        // Auto-refresh dashboard every 10 seconds
+        setInterval(refreshStatus, 10000);
+        
+        // Initial load
+        refreshStatus();
     </script>
 </body>
-</html>)PAGE";
+</html>
+)HTML";
     
     server.send(200, "text/html", html);
 }
@@ -506,6 +986,7 @@ void handleStatus() {
     doc["model"] = OLLAMA_MODEL;
     doc["llm"]["connected"] = llm.isConnected();
     doc["llm"]["model"] = OLLAMA_MODEL;
+    doc["mood"] = DisplayEngine::getMoodEmoji(DisplayEngine::currentMood);
     
     String output;
     serializeJson(doc, output);
@@ -536,8 +1017,10 @@ void handleChat() {
 
 void handleMemory() {
     DynamicJsonDocument doc(1024);
-    doc["memories"] = JsonArray();
-    doc["count"] = 0;
+    doc["total"] = Learning::getTotalInteractions();
+    doc["happy"] = Learning::getHappyInteractions();
+    doc["streak"] = Learning::getConversationStreak();
+    doc["facts"] = Learning::getLearnedFactsCount();
     
     String output;
     serializeJson(doc, output);

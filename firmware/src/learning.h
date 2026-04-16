@@ -177,6 +177,19 @@ public:
         return stats;
     }
     
+    // Getters for dashboard
+    static int getTotalInteractions() {
+        return prefs.getLong(KEY_TOTAL_INTERACTIONS, 0);
+    }
+    
+    static int getHappyInteractions() {
+        return prefs.getLong(KEY_HAPPY_INTERACTIONS, 0);
+    }
+    
+    static int getConversationStreak() {
+        return prefs.getInt(KEY_CONVERSATION_STREAK, 0);
+    }
+    
     // Reset all learning
     static void resetLearning() {
         prefs.putLong(KEY_CONVERSATION_COUNT, 0);
