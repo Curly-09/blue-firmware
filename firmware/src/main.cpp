@@ -120,6 +120,9 @@ void setup() {
     // Connect WiFi (multi-network auto-connect)
     connectBestWiFi();
     
+    // Initialize LLM after WiFi is connected
+    llm.begin();
+    
     // Setup Web Server
     setupServer();
     
@@ -501,6 +504,8 @@ void handleStatus() {
     doc["uptime"] = (millis() - bootTime) / 1000;
     doc["memory"]["free"] = ESP.getFreeHeap();
     doc["model"] = OLLAMA_MODEL;
+    doc["llm"]["connected"] = llm.isConnected();
+    doc["llm"]["model"] = OLLAMA_MODEL;
     
     String output;
     serializeJson(doc, output);

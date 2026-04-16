@@ -61,7 +61,7 @@ static const WiFiNetwork wifiNetworks[] = {
 
 // Memory Configuration
 #define MEMORY_SEARCH_LIMIT   5
-#define TASK_CHECK_INTERVAL   60000  // 1 minute
+#define TASK_CHECK_INTERVAL   5000   // 5 seconds for real-time
 
 // Animation Timings
 #define THINKING_ANIM_SPEED   100
