@@ -44,6 +44,17 @@ public:
         bridgeURL = url;
     }
 
+    String getLoginInstructions() {
+        return getQRCode();
+    }
+
+    void logout() {
+        isWhatsAppConnected = false;
+        connectedNumber = "";
+        preferences.clear();
+        Serial.println("[WhatsApp] Logged out");
+    }
+
     bool checkBridgeStatus() {
         HTTPClient http;
         String url = bridgeURL + "/health";
@@ -53,7 +64,7 @@ public:
         
         if (code == 200) {
             String response = http.getString();
-            JsonDocument doc;
+            DynamicJsonDocument doc(1024);
             deserializeJson(doc, response);
             
             isBridgeConnected = true;
@@ -112,7 +123,7 @@ public:
         http.begin(bridgeURL + "/api/send");
         http.addHeader("Content-Type", "application/json");
         
-        JsonDocument doc;
+        DynamicJsonDocument doc(1024);
         doc["to"] = to;
         doc["message"] = message;
         
@@ -182,21 +193,29 @@ public:
     }
 
     String getMessagesJson() {
-        JsonDocument doc;
         String pollResult = pollMessages();
+        DynamicJsonDocument resultDoc(4096);
+        DeserializationError err = deserializeJson(resultDoc, pollResult);
         
-        deserializeJson(doc, doc["messages"].as<JsonArray>(), pollResult);
-        doc["bridge_connected"] = isBridgeConnected;
-        doc["whatsapp_connected"] = isWhatsAppConnected;
-        doc["number"] = connectedNumber;
+        DynamicJsonDocument outputDoc(4096);
+        outputDoc["bridge_connected"] = isBridgeConnected;
+        outputDoc["whatsapp_connected"] = isWhatsAppConnected;
+        outputDoc["number"] = connectedNumber;
+        JsonArray messages = outputDoc.createNestedArray("messages");
+        
+        if (!err && resultDoc.is<JsonArray>()) {
+            for (JsonVariant item : resultDoc.as<JsonArray>()) {
+                messages.add(item);
+            }
+        }
         
         String output;
-        serializeJson(doc, output);
+        serializeJson(outputDoc, output);
         return output;
     }
 
     String getStatusJson() {
-        JsonDocument doc;
+        DynamicJsonDocument doc(1024);
         doc["bridge_connected"] = isBridgeConnected;
         doc["whatsapp_connected"] = isWhatsAppConnected;
         doc["number"] = connectedNumber;

@@ -13,7 +13,7 @@
 
 class DisplayEngine {
 private:
-    static Adafruit_SH1106 display;
+    static Adafruit_SH1106G display;
     static bool initialized;
     
 public:
@@ -379,7 +379,6 @@ private:
     
     static void showSleepScreen() {
         display.clearDisplay();
-        display.dim(true);
         
         display.setTextSize(2);
         display.setCursor(24, 24);
@@ -412,7 +411,7 @@ private:
 };
 
 // Static variable definitions
-Adafruit_SH1106 DisplayEngine::display(128, 64, &Wire);
+Adafruit_SH1106G DisplayEngine::display(128, 64, &Wire);
 bool DisplayEngine::initialized = false;
 DisplayEngine::Mood DisplayEngine::currentMood = DisplayEngine::MOOD_CURIOUS;
 DisplayEngine::State DisplayEngine::currentState = DisplayEngine::STATE_IDLE;

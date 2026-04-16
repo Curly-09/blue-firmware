@@ -11,6 +11,8 @@
 #include "command_executor.h"
 #include "display_engine.h"
 
+extern LLMClient llm;
+
 // =====================================================
 // BLUE BRAIN - Central AI Controller
 // =====================================================
@@ -277,6 +279,7 @@ bool BlueBrain::initialized = false;
 bool BlueBrain::isProcessing = false;
 String BlueBrain::lastUserMessage = "";
 unsigned long BlueBrain::lastInteractionTime = 0;
+String BlueBrain::messageQueue[5];
 int BlueBrain::queueWrite = 0;
 int BlueBrain::queueRead = 0;
 

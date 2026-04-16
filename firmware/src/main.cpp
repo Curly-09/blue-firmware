@@ -27,7 +27,7 @@ Preferences prefs;
 WebServer server(80);
 
 // Local display for WiFi setup (before BlueBrain initializes)
-Adafruit_SH1106 display(128, 64, &Wire);
+Adafruit_SH1106G display(128, 64, &Wire);
 
 // System State
 bool isSleeping = false;
@@ -67,13 +67,22 @@ void handleChat();
 void handleMemory();
 void handleSettings();
 void handleApprove();
+void handleWhatsAppStatus();
+void handleWhatsAppSend();
+void handleWhatsAppLogin();
+void handleWhatsAppLogout();
+void handleWhatsAppMessages();
 
 void showBootScreen();
 void showThinkingAnimation();
 void showResponseScreen(String response);
 void showStatusScreen();
 
+void connectBestWiFi();
 void connectWiFi();
+void checkButtons();
+void checkSoundWake();
+void handleButtonPress(int btn);
 void processLLMRequest(String message);
 void checkApprovalRequired(String action);
 
@@ -148,7 +157,7 @@ void loop() {
             Serial.println("[WhatsApp] New messages: " + messages);
             
             // Process each message through Blue Brain
-            JsonDocument doc;
+            DynamicJsonDocument doc(4096);
             deserializeJson(doc, messages);
             
             JsonArray msgs = doc.as<JsonArray>();
@@ -423,7 +432,7 @@ void setupServer() {
 // =====================================================
 
 void handleRoot() {
-    String html = R"(<!DOCTYPE html>
+    String html = R"PAGE(<!DOCTYPE html>
 <html>
 <head>
     <title>Blue AI Assistant</title>
@@ -442,7 +451,7 @@ void handleRoot() {
     <div class="card">
         <h3>Status</h3>
         <p class="status">● Online</p>
-        <p>IP: )" + WiFi.localIP().toString() + R"(</p>
+        <p>IP: )PAGE" + WiFi.localIP().toString() + R"PAGE(</p>
         <p>Uptime: <span id="uptime">0</span>s</p>
     </div>
     <div class="card">
@@ -470,17 +479,17 @@ void handleRoot() {
             });
         }
         setInterval(() => {
-            document.getElementById('uptime').innerText = Math.floor(Date.now()/1000 - )" + String(millis()/1000) + R"();
+            document.getElementById('uptime').innerText = Math.floor(Date.now()/1000);
         }, 1000);
     </script>
 </body>
-</html>)";
+</html>)PAGE";
     
     server.send(200, "text/html", html);
 }
 
 void handleStatus() {
-    JsonDocument doc;
+    DynamicJsonDocument doc(1024);
     doc["status"] = "online";
     doc["wifi"]["ssid"] = WiFi.SSID();
     doc["wifi"]["ip"] = WiFi.localIP().toString();
@@ -500,14 +509,14 @@ void handleChat() {
         return;
     }
     
-    JsonDocument incoming;
+    DynamicJsonDocument incoming(1024);
     deserializeJson(incoming, server.arg("plain"));
     String message = incoming["message"].as<String>();
     
     // Process message through Blue Brain
     String response = BlueBrain::processMessageAPI(message);
     
-    JsonDocument doc;
+    DynamicJsonDocument doc(1024);
     doc["response"] = response;
     doc["timestamp"] = millis();
     
@@ -517,7 +526,7 @@ void handleChat() {
 }
 
 void handleMemory() {
-    JsonDocument doc;
+    DynamicJsonDocument doc(1024);
     doc["memories"] = JsonArray();
     doc["count"] = 0;
     
@@ -527,7 +536,7 @@ void handleMemory() {
 }
 
 void handleSettings() {
-    JsonDocument doc;
+    DynamicJsonDocument doc(1024);
     doc["wake_word_enabled"] = true;
     doc["sound_sensor_enabled"] = true;
     doc["thinking_animation"] = "dots";
@@ -539,13 +548,13 @@ void handleSettings() {
 }
 
 void handleApprove() {
-    JsonDocument incoming;
+    DynamicJsonDocument incoming(1024);
     deserializeJson(incoming, server.arg("plain"));
     
     String actionId = incoming["action_id"].as<String>();
     bool approved = incoming["approved"].as<bool>();
     
-    JsonDocument doc;
+    DynamicJsonDocument doc(1024);
     doc["status"] = approved ? "approved" : "rejected";
     doc["action_id"] = actionId;
     
@@ -571,7 +580,7 @@ void checkSoundWake() {
     
     // Add to rolling average
     soundSamples[soundSampleIndex++] = soundValue;
-    if (soundSampleIndex >= soundSampleIndex) {
+    if (soundSampleIndex >= soundSampleCount) {
         soundSampleIndex = 0;
     }
     
@@ -651,7 +660,7 @@ void handleWhatsAppSend() {
         return;
     }
     
-    JsonDocument doc;
+    DynamicJsonDocument doc(1024);
     deserializeJson(doc, server.arg("plain"));
     
     String to = doc["to"].as<String>();
@@ -659,7 +668,7 @@ void handleWhatsAppSend() {
     
     bool result = whatsapp.sendMessage(to, message);
     
-    JsonDocument response;
+    DynamicJsonDocument response(1024);
     response["success"] = result;
     response["queued"] = true;
     
@@ -679,8 +688,6 @@ void handleWhatsAppLogout() {
 }
 
 void handleWhatsAppMessages() {
-    JsonDocument doc = whatsapp.getMessagesJson();
-    String output;
-    serializeJson(doc, output);
+    String output = whatsapp.getMessagesJson();
     server.send(200, "application/json", output);
 }

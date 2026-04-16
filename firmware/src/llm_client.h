@@ -52,27 +52,26 @@ public:
         http.addHeader("Content-Type", "application/json");
         
         // Build request with system prompt + context
-        JsonDocument doc;
-        
-        // Build messages array
-        JsonArray messages = doc["model"].set(model);
+        DynamicJsonDocument doc(4096);
+        doc["model"] = model;
+        JsonArray messages = doc.createNestedArray("messages");
         
         // System message (Blue's personality)
-        messages.add(JsonObject());
-        messages[0]["role"] = "system";
-        messages[0]["content"] = BLUE_SYSTEM_PROMPT;
+        JsonObject systemMsg = messages.createNestedObject();
+        systemMsg["role"] = "system";
+        systemMsg["content"] = BLUE_SYSTEM_PROMPT;
         
         // Add conversation context if available
         if (context.length() > 0) {
-            messages.add(JsonObject());
-            messages[1]["role"] = "system";
-            messages[1]["content"] = "Previous conversation:\n" + context;
+            JsonObject contextMsg = messages.createNestedObject();
+            contextMsg["role"] = "system";
+            contextMsg["content"] = "Previous conversation:\n" + context;
         }
         
         // User message
-        messages.add(JsonObject());
-        messages[messages.size() - 1]["role"] = "user";
-        messages[messages.size() - 1]["content"] = message;
+        JsonObject userMsg = messages.createNestedObject();
+        userMsg["role"] = "user";
+        userMsg["content"] = message;
         
         doc["stream"] = false;
         doc["options"]["temperature"] = 0.7;
@@ -89,7 +88,7 @@ public:
         if (httpCode == 200) {
             String responseBody = http.getString();
             
-            JsonDocument responseDoc;
+            DynamicJsonDocument responseDoc(4096);
             DeserializationError error = deserializeJson(responseDoc, responseBody);
             
             if (!error) {
@@ -115,7 +114,7 @@ public:
         http.begin(String(baseUrl) + "/api/embeddings");
         http.addHeader("Content-Type", "application/json");
         
-        JsonDocument doc;
+        DynamicJsonDocument doc(1024);
         doc["model"] = model;
         doc["prompt"] = text;
         
@@ -127,7 +126,7 @@ public:
         
         if (httpCode == 200) {
             String responseBody = http.getString();
-            JsonDocument responseDoc;
+            DynamicJsonDocument responseDoc(2048);
             deserializeJson(responseDoc, responseBody);
             result = responseDoc["embedding"].as<String>();
         }

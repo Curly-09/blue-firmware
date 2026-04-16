@@ -67,6 +67,12 @@ static const WiFiNetwork wifiNetworks[] = {
 #define THINKING_ANIM_SPEED   100
 #define MESSAGE_DISPLAY_TIME  5000
 
+// Backend service configuration
+#define OLLAMA_BASE_URL       "http://localhost:11434"
+#define OLLAMA_MODEL          "llama2"
+#define SUPABASE_URL          "https://your-supabase-project.supabase.co"
+#define SUPABASE_ANON_KEY     "your-supabase-anon-key"
+
 // Buzzer Patterns
 #define BUZZER_MSG_NOTIFY     2
 #define BUZZER_THINKING       1
