@@ -204,15 +204,15 @@ private:
 
 // Static definitions
 Preferences Learning::prefs;
-const char* Learning::KEY_CONVERSATION_COUNT = "conv_count";
-const char* Learning::KEY_USER_MOOD_HISTORY = "user_mood_hist";
-const char* Learning::KEY_USER_PREFERENCES = "user_prefs";
-const char* Learning::KEY_BLUE_MOOD_COUNTER = "blue_mood_cnt";
-const char* Learning::KEY_LAST_USER_MOOD = "last_user_mood";
-const char* Learning::KEY_TOTAL_INTERACTIONS = "total_interactions";
-const char* Learning::KEY_HAPPY_INTERACTIONS = "happy_interactions";
-const char* Learning::KEY_LEARNED_FACTS = "learned_facts";
-const char* Learning::KEY_CONVERSATION_STREAK = "conv_streak";
-const char* Learning::KEY_LAST_INTERACTION_TIME = "last_interaction_time";
+const char* Learning::KEY_CONVERSATION_COUNT = "cnt";
+const char* Learning::KEY_USER_MOOD_HISTORY = "umood";
+const char* Learning::KEY_USER_PREFERENCES = "upref";
+const char* Learning::KEY_BLUE_MOOD_COUNTER = "bmood";
+const char* Learning::KEY_LAST_USER_MOOD = "lumood";
+const char* Learning::KEY_TOTAL_INTERACTIONS = "total";
+const char* Learning::KEY_HAPPY_INTERACTIONS = "happy";
+const char* Learning::KEY_LEARNED_FACTS = "facts";
+const char* Learning::KEY_CONVERSATION_STREAK = "streak";
+const char* Learning::KEY_LAST_INTERACTION_TIME = "lastime";
 
 #endif // BLUE_LEARNING_H

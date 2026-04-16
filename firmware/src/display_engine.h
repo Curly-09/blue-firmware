@@ -148,19 +148,19 @@ public:
     // Get mood emoji
     static String getMoodEmoji(Mood mood) {
         switch (mood) {
-            case MOOD_NEUTRAL: return "😐";
-            case MOOD_HAPPY: return "😊";
-            case MOOD_SAD: return "😢";
-            case MOOD_EXCITED: return "🤩";
-            case MOOD_BORED: return "😑";
-            case MOOD_CURIOUS: return "🤔";
-            case MOOD_THOUGHTFUL: return "🤨";
-            case MOOD_SURPRISED: return "😮";
-            case MOOD_TIRED: return "😴";
-            case MOOD_EXCITED_SPEECH: return "🗣️";
-            case MOOD_CONFUSED: return "😕";
-            case MOOD_HELPFUL: return "🙂";
-            default: return "😐";
+            case MOOD_NEUTRAL: return "-";
+            case MOOD_HAPPY: return ":)";
+            case MOOD_SAD: return ":(";
+            case MOOD_EXCITED: return "!!";
+            case MOOD_BORED: return "..";
+            case MOOD_CURIOUS: return "?";
+            case MOOD_THOUGHTFUL: return ":";
+            case MOOD_SURPRISED: return "o";
+            case MOOD_TIRED: return "Z";
+            case MOOD_EXCITED_SPEECH: return ">";
+            case MOOD_CONFUSED: return "~";
+            case MOOD_HELPFUL: return "*";
+            default: return "-";
         }
     }
     
