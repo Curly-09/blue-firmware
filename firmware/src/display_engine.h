@@ -13,7 +13,7 @@
 
 class DisplayEngine {
 private:
-    static Adafruit_SH1106G display;
+    static Adafruit_SH1106G* displayPtr;
     static bool initialized;
     
 public:
@@ -52,17 +52,18 @@ public:
     static String pendingMessage;
     static bool needsRedraw;
     
-    // Initialize display
-    static bool begin() {
-        Wire.begin(I2C_SDA, I2C_SCL);
-        if (!display.begin(OLED_ADDR, true)) {
+    // Initialize display (using external display pointer from main.cpp)
+    static bool begin(Adafruit_SH1106G* extDisplay) {
+        displayPtr = extDisplay;
+        
+        if (!displayPtr->begin(OLED_ADDR, true)) {
             Serial.println("[Display] OLED not found!");
             return false;
         }
         
-        display.clearDisplay();
-        display.setTextSize(1);
-        display.setTextColor(SH110X_WHITE);
+        displayPtr->clearDisplay();
+        displayPtr->setTextSize(1);
+        displayPtr->setTextColor(SH110X_WHITE);
         
         initialized = true;
         currentMood = MOOD_CURIOUS;
@@ -170,12 +171,12 @@ private:
         if (millis() - lastUpdate < 1000 && !needsRedraw) return;
         lastUpdate = millis();
         
-        display.clearDisplay();
+        displayPtr->clearDisplay();
         
         // Draw mood icon
-        display.setTextSize(2);
-        display.setCursor(0, 0);
-        display.print(getMoodEmoji(currentMood));
+        displayPtr->setTextSize(2);
+        displayPtr->setCursor(0, 0);
+        displayPtr->print(getMoodEmoji(currentMood));
         
         // Draw time
         time_t now = time(nullptr);
@@ -183,39 +184,39 @@ private:
         char timeBuf[20];
         strftime(timeBuf, sizeof(timeBuf), "%H:%M", ti);
         
-        display.setTextSize(2);
-        display.setCursor(40, 0);
-        display.print(timeBuf);
+        displayPtr->setTextSize(2);
+        displayPtr->setCursor(40, 0);
+        displayPtr->print(timeBuf);
         
         // Draw separator line
-        display.drawLine(0, 24, 127, 24, 1);
+        displayPtr->drawLine(0, 24, 127, 24, 1);
         
         // Draw status indicators
-        display.setTextSize(1);
-        display.setCursor(0, 30);
+        displayPtr->setTextSize(1);
+        displayPtr->setCursor(0, 30);
         
         // WiFi status
-        display.print(WiFi.status() == WL_CONNECTED ? "●" : "○");
-        display.print(" WiFi ");
+        displayPtr->print(WiFi.status() == WL_CONNECTED ? "●" : "○");
+        displayPtr->print(" WiFi ");
         
         // WhatsApp status
-        display.print("● WhatsApp ");
+        displayPtr->print("● WhatsApp ");
         
         // Uptime
         unsigned long secs = millis() / 1000;
-        display.print("up ");
-        display.print(secs / 60);
-        display.print("m");
+        displayPtr->print("up ");
+        displayPtr->print(secs / 60);
+        displayPtr->print("m");
         
         // Bottom status - current mood
-        display.setCursor(0, 56);
-        display.print("Mood: ");
-        display.print(currentMood == MOOD_CURIOUS ? "Curious" :
+        displayPtr->setCursor(0, 56);
+        displayPtr->print("Mood: ");
+        displayPtr->print(currentMood == MOOD_CURIOUS ? "Curious" :
                       currentMood == MOOD_HAPPY ? "Happy" :
                       currentMood == MOOD_THOUGHTFUL ? "Thoughtful" :
                       currentMood == MOOD_HELPFUL ? "Helpful" : "Neutral");
         
-        display.display();
+        displayPtr->display();
         needsRedraw = false;
     }
     
@@ -226,12 +227,12 @@ private:
         if (millis() - lastFrame < 150) return;
         lastFrame = millis();
         
-        display.clearDisplay();
+        displayPtr->clearDisplay();
         
         // Thinking text
-        display.setTextSize(1);
-        display.setCursor(40, 0);
-        display.print("Thinking...");
+        displayPtr->setTextSize(1);
+        displayPtr->setCursor(40, 0);
+        displayPtr->print("Thinking...");
         
         // Animated dots
         int dotY = 32;
@@ -240,19 +241,19 @@ private:
         for (int i = 0; i < 3; i++) {
             int active = (frame + i) % 3;
             if (active == 0) {
-                display.fillCircle(dotX[i], dotY, 6, 1);
+                displayPtr->fillCircle(dotX[i], dotY, 6, 1);
             } else {
-                display.drawCircle(dotX[i], dotY, 6, 1);
+                displayPtr->drawCircle(dotX[i], dotY, 6, 1);
             }
         }
         
         // Show mood emoji
-        display.setTextSize(2);
-        display.setCursor(48, 48);
-        display.print(getMoodEmoji(MOOD_THOUGHTFUL));
+        displayPtr->setTextSize(2);
+        displayPtr->setCursor(48, 48);
+        displayPtr->print(getMoodEmoji(MOOD_THOUGHTFUL));
         
         frame = (frame + 1) % 3;
-        display.display();
+        displayPtr->display();
     }
     
     static void showResponseMessage() {
@@ -261,15 +262,15 @@ private:
             return;
         }
         
-        display.clearDisplay();
+        displayPtr->clearDisplay();
         
-        display.setTextSize(1);
-        display.setCursor(0, 0);
-        display.print("Blue:");
-        display.drawLine(0, 10, 127, 10, 1);
+        displayPtr->setTextSize(1);
+        displayPtr->setCursor(0, 0);
+        displayPtr->print("Blue:");
+        displayPtr->drawLine(0, 10, 127, 10, 1);
         
         // Word wrap message
-        display.setCursor(0, 14);
+        displayPtr->setCursor(0, 14);
         
         String displayMsg = pendingMessage;
         if (displayMsg.length() > 40) {
@@ -280,16 +281,16 @@ private:
         if (pendingMessage.length() > 128) {
             // Show first part with indicator
             displayMsg = pendingMessage.substring(0, 120);
-            display.drawLine(0, 54, 127, 54, 1);
-            display.setCursor(100, 56);
-            display.print("▼");
+            displayPtr->drawLine(0, 54, 127, 54, 1);
+            displayPtr->setCursor(100, 56);
+            displayPtr->print("▼");
         }
         
-        display.print(displayMsg);
+        displayPtr->print(displayMsg);
         
         // Show mood
-        display.setTextSize(2);
-        display.setCursor(48, 56);
+        displayPtr->setTextSize(2);
+        displayPtr->setCursor(48, 56);
         
         // Mood based on response
         Mood respMood = MOOD_HELPFUL;
@@ -297,9 +298,9 @@ private:
         else if (pendingMessage.indexOf("?") >= 0) respMood = MOOD_CURIOUS;
         else if (pendingMessage.length() < 20) respMood = MOOD_HAPPY;
         
-        display.print(getMoodEmoji(respMood));
+        displayPtr->print(getMoodEmoji(respMood));
         
-        display.display();
+        displayPtr->display();
         
         // Auto-return to idle after duration
         if (millis() - stateStartTime > 5000) {
@@ -315,25 +316,25 @@ private:
         if (millis() - lastFrame < 100) return;
         lastFrame = millis();
         
-        display.clearDisplay();
+        displayPtr->clearDisplay();
         
-        display.setTextSize(1);
-        display.setCursor(32, 0);
-        display.print("Listening...");
+        displayPtr->setTextSize(1);
+        displayPtr->setCursor(32, 0);
+        displayPtr->print("Listening...");
         
         // Sound wave animation
         int baseY = 32;
         for (int i = 0; i < 5; i++) {
             int height = random(10, 25);
-            display.fillRect(20 + i * 24, baseY - height/2, 15, height, 1);
+            displayPtr->fillRect(20 + i * 24, baseY - height/2, 15, height, 1);
         }
         
-        display.setTextSize(2);
-        display.setCursor(48, 50);
-        display.print("👂");
+        displayPtr->setTextSize(2);
+        displayPtr->setCursor(48, 50);
+        displayPtr->print("👂");
         
         frame++;
-        display.display();
+        displayPtr->display();
         
         // Return to idle after timeout
         if (millis() - stateStartTime > 3000) {
@@ -342,17 +343,17 @@ private:
     }
     
     static void showAlertScreen() {
-        display.clearDisplay();
+        displayPtr->clearDisplay();
         
-        display.setTextSize(2);
-        display.setCursor(0, 20);
-        display.print("🔔 New!");
+        displayPtr->setTextSize(2);
+        displayPtr->setCursor(0, 20);
+        displayPtr->print("🔔 New!");
         
-        display.setTextSize(1);
-        display.setCursor(0, 44);
-        display.print("Message received");
+        displayPtr->setTextSize(1);
+        displayPtr->setCursor(0, 44);
+        displayPtr->print("Message received");
         
-        display.display();
+        displayPtr->display();
         
         if (millis() - stateStartTime > 3000) {
             setState(STATE_IDLE);
@@ -360,17 +361,17 @@ private:
     }
     
     static void showErrorScreen() {
-        display.clearDisplay();
+        displayPtr->clearDisplay();
         
-        display.setTextSize(2);
-        display.setCursor(0, 20);
-        display.print("❌ Error");
+        displayPtr->setTextSize(2);
+        displayPtr->setCursor(0, 20);
+        displayPtr->print("❌ Error");
         
-        display.setTextSize(1);
-        display.setCursor(0, 44);
-        display.print(pendingMessage);
+        displayPtr->setTextSize(1);
+        displayPtr->setCursor(0, 44);
+        displayPtr->print(pendingMessage);
         
-        display.display();
+        displayPtr->display();
         
         if (millis() - stateStartTime > 5000) {
             setState(STATE_IDLE);
@@ -378,40 +379,40 @@ private:
     }
     
     static void showSleepScreen() {
-        display.clearDisplay();
+        displayPtr->clearDisplay();
         
-        display.setTextSize(2);
-        display.setCursor(24, 24);
-        display.print("Zzz...");
+        displayPtr->setTextSize(2);
+        displayPtr->setCursor(24, 24);
+        displayPtr->print("Zzz...");
         
-        display.display();
+        displayPtr->display();
     }
     
     static void showApprovalScreen() {
-        display.clearDisplay();
+        displayPtr->clearDisplay();
         
-        display.setTextSize(1);
-        display.setCursor(0, 0);
-        display.print("⚠️ Confirm:");
-        display.drawLine(0, 10, 127, 10, 1);
+        displayPtr->setTextSize(1);
+        displayPtr->setCursor(0, 0);
+        displayPtr->print("⚠️ Confirm:");
+        displayPtr->drawLine(0, 10, 127, 10, 1);
         
-        display.setCursor(0, 14);
+        displayPtr->setCursor(0, 14);
         
         String displayMsg = pendingMessage;
         if (displayMsg.length() > 80) {
             displayMsg = displayMsg.substring(0, 80) + "...";
         }
-        display.print(displayMsg);
+        displayPtr->print(displayMsg);
         
-        display.setCursor(0, 54);
-        display.print("Say YES or NO");
+        displayPtr->setCursor(0, 54);
+        displayPtr->print("Say YES or NO");
         
-        display.display();
+        displayPtr->display();
     }
 };
 
 // Static variable definitions
-Adafruit_SH1106G DisplayEngine::display(128, 64, &Wire);
+Adafruit_SH1106G* DisplayEngine::displayPtr = nullptr;
 bool DisplayEngine::initialized = false;
 DisplayEngine::Mood DisplayEngine::currentMood = DisplayEngine::MOOD_CURIOUS;
 DisplayEngine::State DisplayEngine::currentState = DisplayEngine::STATE_IDLE;

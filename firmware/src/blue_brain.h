@@ -31,7 +31,7 @@ private:
     static int queueRead;
     
 public:
-    static bool begin() {
+    static bool begin(Adafruit_SH1106G* extDisplay = nullptr) {
         Serial.println("\n===========================================");
         Serial.println("   BLUE BRAIN INITIALIZING...");
         Serial.println("===========================================");
@@ -39,8 +39,10 @@ public:
         // Initialize all subsystems
         Learning::begin();
         
-        // Initialize display
-        DisplayEngine::begin();
+        // Initialize display with external display
+        if (extDisplay) {
+            DisplayEngine::begin(extDisplay);
+        }
         
         // Test display
         DisplayEngine::showMessage("Blue initializing...\nAlmost ready!", 2000);

@@ -110,8 +110,12 @@ void setup() {
     pinMode(BUZZER, OUTPUT);
     pinMode(SOUND_SENSOR, INPUT);
     
-    // Initialize Blue Brain (includes all subsystems)
-    BlueBrain::begin();
+    // Initialize OLED FIRST before BlueBrain
+    setupOLED();
+    showBootScreen();
+    
+    // Initialize Blue Brain with display pointer
+    BlueBrain::begin(&display);
     
     // Connect WiFi (multi-network auto-connect)
     connectBestWiFi();
